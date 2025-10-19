@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Trái tim & Lời nhắn — QR ready</title>
+  <style>
+    :root{ --bg:#fff; --card:#fff; --text:#111; --accent:#ff4d6d; }
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+    body{
+      display:flex;align-items:center;justify-content:center;
+      background: linear-gradient(180deg,#fff 0%, #f7f8fb 100%);
+      color:var(--text);
+      padding:24px;
+    }
+    .wrap{
+      width:100%;max-width:900px;background:var(--card);border-radius:20px;
+      box-shadow:0 10px 30px rgba(20,20,40,0.08);padding:28px;display:grid;
+      grid-template-columns:1fr 300px;gap:20px;align-items:center;
+    }
+    .left{ text-align:center;padding:18px }
+    .heart{
+      font-size:96px; line-height:1;
+      display:inline-block;
+      transform-origin:center;
+      animation:beat 1s infinite;
+      user-select:none;
+      filter:drop-shadow(0 8px 20px rgba(255,77,109,0.18));
+    }
+    @keyframes beat{
+      0%{ transform:scale(1) }
+      25%{ transform:scale(1.08) }
+      40%{ transform:scale(0.98) }
+      60%{ transform:scale(1.06) }
+      100%{ transform:scale(1) }
+    }
+    h1{ margin:14px 0 6px;font-size:28px; }
+    p{margin:0;color:#444}
+    .right{ display:flex;flex-direction:column;align-items:center;gap:14px; }
+    .qr-box{ width:220px;height:220px;display:flex;align-items:center;justify-content:center;border-radius:10px;padding:10px;background:linear-gradient(180deg,#fff,#fafafa); box-shadow:0 6px 18px rgba(10,10,30,0.06);}
+    .small{font-size:13px;color:#666}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+    input[type="text"]{padding:8px 10px;border-radius:8px;border:1px solid #e6e6ea;width:100%}
+    button{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:white;cursor:pointer}
+    footer{font-size:12px;color:#888;text-align:center;margin-top:8px}
+    @media (max-width:760px){
+      .wrap{grid-template-columns:1fr;max-width:420px}
+      .heart{font-size:80px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="page">
+    <div class="left">
+      <!-- Trái tim: dùng SVG để đẹp -->
+      <div class="heart" aria-hidden="true">
+        ❤️
+      </div>
+      <h1 id="message-title">Gửi bạn một trái tim</h1>
+      <p id="message-sub">Chúc bạn một ngày tuyệt vời — quét mã để xem cùng!</p>
+    </div>
+
+    <div class="right">
+      <div class="qr-box" id="qrcode">
+        <!-- QR sẽ được chèn vào đây -->
+      </div>
+
+      <div style="width:100%;">
+        <div class="small">URL mã QR (được quét sẽ mở):</div>
+        <input type="text" id="url-field" readonly />
+      </div>
+
+      <div class="controls" style="width:100%;">
+        <button id="refresh-btn">Tạo lại mã QR (dùng URL hiện tại)</button>
+        <button id="custom-btn">Tạo mã cho chữ/URL khác</button>
+      </div>
+
+      <div class="small" style="text-align:center;margin-top:6px">Mẹo: nếu quét trên cùng 1 máy, bạn có thể mở trực tiếp URL ở thanh địa chỉ.</div>
+    </div>
+  </div>
+
+  <!-- Thư viện QR nhỏ (qrcodejs từ CDN). Nếu bạn cần offline, mình có thể gửi file JS. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    // Nội dung hiển thị mặc định (có thể thay đổi)
+    const titleEl = document.getElementById('message-title');
+    const subEl = document.getElementById('message-sub');
+    // Thay nội dung ở đây nếu muốn mặc định khác:
+    const defaultTitle = 'Gửi bạn một trái tim';
+    const defaultSub = 'Chúc bạn một ngày tuyệt vời — ❤️';
+
+    titleEl.textContent = defaultTitle;
+    subEl.textContent = defaultSub;
+
+    const qbox = document.getElementById('qrcode');
+    const urlField = document.getElementById('url-field');
+
+    function currentURLForQR(){
+      // Mặc định lấy location.href — nếu bạn host trên web, QR sẽ dẫn đến link đó
+      // Nếu mở file:// thì QR sẽ chứa file://... (điện thoại sẽ không mở được file local)
+      return window.location.href;
+    }
+
+    let qr;
+    function makeQR(text){
+      qbox.innerHTML = '';
+      qr = new QRCode(qbox, {
+        text: text,
+        width: 200,
+        height: 200,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+      });
+      urlField.value = text;
+    }
+
+    // Tạo QR mặc định cho URL hiện tại
+    makeQR(currentURLForQR());
+
+    // nút tạo lại: hữu ích nếu bạn upload và muốn mã hoá URL hosted
+    document.getElementById('refresh-btn').addEventListener('click', ()=>{
+      makeQR(currentURLForQR());
+      alert('Đã tạo lại QR cho URL hiện tại:\n' + currentURLForQR());
+    });
+
+    document.getElementById('custom-btn').addEventListener('click', ()=>{
+      const inp = prompt('Nhập URL hoặc đoạn văn bản muốn mã hóa vào QR (ví dụ: https://example.com hoặc "Xin chào! ❤️")');
+      if(!inp) return;
+      makeQR(inp);
+    });
+
+    // Nếu bạn muốn, có thể tự động cập nhật nội dung hiển thị bằng query string:
+    // Ví dụ: https://yourdomain.com/?title=Hello&msg=Love
+    (function applyFromQuery(){
+      const params = new URLSearchParams(location.search);
+      const t = params.get('title');
+      const m = params.get('msg') || params.get('message');
+      if(t) titleEl.textContent = decodeURIComponent(t);
+      if(m) subEl.textContent = decodeURIComponent(m);
+    })();
+  </script>
+</body>
+</html>
